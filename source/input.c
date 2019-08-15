@@ -797,7 +797,10 @@ int input_read_parameters(
     class_read_double("Gamma_dcdm",pba->Gamma_dcdm);
     /* Convert to Mpc */
     pba->Gamma_dcdm *= (1.e3 / _c_);
-
+    /** - Read Gamma in same units as H0, i.e. km/(s Mpc)*/
+    class_read_double("Gamma_dcdm2bar",pba->Gamma_dcdm2bar);
+    /* Convert to Mpc */
+    pba->Gamma_dcdm2bar *= (1.e3 / _c_);
   }
 
   /** - non-cold relics (ncdm) */
@@ -2954,6 +2957,7 @@ int input_default_params(
   pba->Omega0_dcdmdr = 0.0;
   pba->Omega0_dcdm = 0.0;
   pba->Gamma_dcdm = 0.0;
+  pba->Gamma_dcdm2bar = 0.0;
   pba->N_ncdm = 0;
   pba->Omega0_ncdm_tot = 0.;
   pba->ksi_ncdm_default = 0.;
@@ -3654,7 +3658,7 @@ int input_try_unknown_parameters(double * unknown_parameter,
   struct lensing le;          /* for lensed spectra */
   struct output op;           /* for output files */
   int i;
-  double rho_dcdm_today, rho_dr_today;
+  double rho_dcdm_today, rho_dr_today, rho_daugther_bar_today;
   struct fzerofun_workspace * pfzw;
   int input_verbose;
   int flag;
@@ -3802,7 +3806,13 @@ int input_try_unknown_parameters(double * unknown_parameter,
         rho_dr_today = ba.background_table[(ba.bt_size-1)*ba.bg_size+ba.index_bg_rho_dr];
       else
         rho_dr_today = 0.;
-      output[i] = -(rho_dcdm_today+rho_dr_today)/(ba.H0*ba.H0)+ba.Omega0_dcdmdr;
+
+      if (ba.has_dcdm2bar == _TRUE_)
+        rho_daugther_bar_today = ba.background_table[(ba.bt_size-1)*ba.bg_size+ba.index_bg_rho_b]-ba.Omega0_b * pow(ba.H0,2);
+      else
+        rho_daugther_bar_today = 0.;
+
+      output[i] = -(rho_dcdm_today+rho_dr_today+rho_daugther_bar_today)/(ba.H0*ba.H0)+ba.Omega0_dcdmdr;
       break;
     case sigma8:
       output[i] = sp.sigma8-pfzw->target_value[i];
@@ -3959,6 +3969,7 @@ int input_get_guess(double *xguess,
       Omega0_dcdmdr *=pfzw->target_value[index_guess];
       Omega_M = ba.Omega0_cdm+Omega0_dcdmdr+ba.Omega0_b;
       gamma = ba.Gamma_dcdm/ba.H0;
+      gamma += ba.Gamma_dcdm2bar/ba.H0;
       if (gamma < 1)
         a_decay = 1.0;
       else

@@ -4469,7 +4469,10 @@ int perturb_initial_conditions(struct precision * ppr,
       }
 
       if (pba->has_dcdm == _TRUE_) {
-        ppw->pv->y[ppw->pv->index_pt_delta_dcdm] += (-3.*a_prime_over_a - a*pba->Gamma_dcdm)*alpha;
+        if(pba->has_dr == _TRUE_)
+          ppw->pv->y[ppw->pv->index_pt_delta_dcdm] += (-3.*a_prime_over_a - a*pba->Gamma_dcdm)*alpha;
+        else if(pba->has_dcdm2bar == _TRUE_)
+          ppw->pv->y[ppw->pv->index_pt_delta_dcdm] += (-3.*a_prime_over_a - a*pba->Gamma_dcdm2bar)*alpha;
         ppw->pv->y[ppw->pv->index_pt_theta_dcdm] = k*k*alpha;
       }
 
@@ -6659,7 +6662,11 @@ int perturb_print_variables(double tau,
       }
 
       if (pba->has_dcdm == _TRUE_) {
-        delta_dcdm += alpha*(-a*pba->Gamma_dcdm-3.*a*H);
+        if(pba->has_dcdm2bar == _TRUE_){
+          delta_dcdm += alpha*(-a*pba->Gamma_dcdm2bar-3.*a*H);
+        }else if(pba->has_dcdm == _TRUE_){
+          delta_dcdm += alpha*(-a*pba->Gamma_dcdm-3.*a*H);
+        }
         theta_dcdm += k*k*alpha;
       }
 
@@ -7130,7 +7137,9 @@ int perturb_derivs(double tau,
     /** - ---> baryon density */
 
     dy[pv->index_pt_delta_b] = -(theta_b+metric_continuity);
-
+    if(pba->has_dcdm2bar == _TRUE_){
+      dy[pv->index_pt_delta_b] +=  a * pba->Gamma_dcdm2bar / k2 * metric_euler; /* dcdm density */
+    }
     /** - ---> baryon velocity (depends on tight-coupling approximation=tca) */
 
     if (ppw->approx[ppw->index_ap_tca] == (int)tca_off) {
@@ -7292,10 +7301,14 @@ int perturb_derivs(double tau,
     if (pba->has_dcdm == _TRUE_) {
 
       /** - ----> dcdm */
-
-      dy[pv->index_pt_delta_dcdm] = -(y[pv->index_pt_theta_dcdm]+metric_continuity)
-        - a * pba->Gamma_dcdm / k2 * metric_euler; /* dcdm density */
-
+      if(pba->has_dr == _TRUE_){
+        dy[pv->index_pt_delta_dcdm] = -(y[pv->index_pt_theta_dcdm]+metric_continuity)
+          - a * pba->Gamma_dcdm / k2 * metric_euler; /* dcdm density */
+      }
+      else if(pba->has_dcdm2bar == _TRUE_){
+        dy[pv->index_pt_delta_dcdm] = -(y[pv->index_pt_theta_dcdm]+metric_continuity)
+          - a * pba->Gamma_dcdm2bar / k2 * metric_euler; /* dcdm density */
+      }
       dy[pv->index_pt_theta_dcdm] = - a_prime_over_a*y[pv->index_pt_theta_dcdm] + metric_euler; /* dcdm velocity */
     }
 

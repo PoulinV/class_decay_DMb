@@ -298,6 +298,9 @@ int background_functions(
 
   /* baryons */
   pvecback[pba->index_bg_rho_b] = pba->Omega0_b * pow(pba->H0,2) / pow(a_rel,3);
+  if(pba->has_dcdm2bar == _TRUE_){
+    pvecback[pba->index_bg_rho_b] += pvecback_B[pba->index_bi_rho_daughter_bar];
+  }
   rho_tot += pvecback[pba->index_bg_rho_b];
   p_tot += 0;
   rho_m += pvecback[pba->index_bg_rho_b];
@@ -830,6 +833,7 @@ int background_indices(
   pba->has_ncdm = _FALSE_;
   pba->has_dcdm = _FALSE_;
   pba->has_dr = _FALSE_;
+  pba->has_dcdm2bar = _FALSE_;
   pba->has_scf = _FALSE_;
   pba->has_lambda = _FALSE_;
   pba->has_fld = _FALSE_;
@@ -846,6 +850,8 @@ int background_indices(
     pba->has_dcdm = _TRUE_;
     if (pba->Gamma_dcdm != 0.)
       pba->has_dr = _TRUE_;
+    if (pba->Gamma_dcdm2bar != 0.)
+      pba->has_dcdm2bar = _TRUE_;
   }
 
   if (pba->Omega0_scf != 0.)
@@ -978,6 +984,9 @@ int background_indices(
 
   /* -> energy density in DR */
   class_define_index(pba->index_bi_rho_dr,pba->has_dr,index_bi,1);
+
+  /* -> energy density in DR */
+  class_define_index(pba->index_bi_rho_daughter_bar,pba->has_dcdm2bar,index_bi,1);
 
   /* -> energy density in fluid */
   class_define_index(pba->index_bi_rho_fld,pba->has_fld,index_bi,1);
@@ -1727,6 +1736,7 @@ int background_solve(
   }
 
 
+
   /** - allocate background tables */
   class_alloc(pba->tau_table,pba->bt_size * sizeof(double),pba->error_message);
 
@@ -1952,6 +1962,7 @@ int background_initial_conditions(
     if (pba->background_verbose > 3)
       printf("Density is %g. a_today=%g. Omega_ini=%g\n",pvecback_integration[pba->index_bi_rho_dcdm],pba->a_today,pba->Omega_ini_dcdm);
   }
+
 
   if (pba->has_dr == _TRUE_){
     if (pba->has_dcdm == _TRUE_){
@@ -2326,12 +2337,18 @@ int background_derivs(
   dy[pba->index_bi_D] = y[pba->index_bi_D_prime];
   dy[pba->index_bi_D_prime] = -a*H*y[pba->index_bi_D_prime] + 1.5*a*a*rho_M*y[pba->index_bi_D];
 
-  if (pba->has_dcdm == _TRUE_){
+  if (pba->has_dcdm == _TRUE_ ){
     /** - compute dcdm density \f$ \rho' = -3aH \rho - a \Gamma \rho \f$*/
-    dy[pba->index_bi_rho_dcdm] = -3.*y[pba->index_bi_a]*pvecback[pba->index_bg_H]*y[pba->index_bi_rho_dcdm]-
-      y[pba->index_bi_a]*pba->Gamma_dcdm*y[pba->index_bi_rho_dcdm];
+    dy[pba->index_bi_rho_dcdm] = -3.*y[pba->index_bi_a]*pvecback[pba->index_bg_H]*y[pba->index_bi_rho_dcdm];
+    if(pba->has_dr == _TRUE_)dy[pba->index_bi_rho_dcdm] -= y[pba->index_bi_a]*pba->Gamma_dcdm*y[pba->index_bi_rho_dcdm];
+    if(pba->has_dcdm2bar == _TRUE_)dy[pba->index_bi_rho_dcdm]-=y[pba->index_bi_a]*pba->Gamma_dcdm2bar*y[pba->index_bi_rho_dcdm];
   }
 
+  if ((pba->has_dcdm == _TRUE_) && (pba->has_dcdm2bar == _TRUE_)){
+    /** - Compute dr density \f$ \rho' = -4aH \rho - a \Gamma \rho \f$ */
+    dy[pba->index_bi_rho_daughter_bar] = -3.*y[pba->index_bi_a]*pvecback[pba->index_bg_H]*y[pba->index_bi_rho_daughter_bar]+
+      y[pba->index_bi_a]*pba->Gamma_dcdm2bar*y[pba->index_bi_rho_dcdm];
+  }
   if ((pba->has_dcdm == _TRUE_) && (pba->has_dr == _TRUE_)){
     /** - Compute dr density \f$ \rho' = -4aH \rho - a \Gamma \rho \f$ */
     dy[pba->index_bi_rho_dr] = -4.*y[pba->index_bi_a]*pvecback[pba->index_bg_H]*y[pba->index_bi_rho_dr]+

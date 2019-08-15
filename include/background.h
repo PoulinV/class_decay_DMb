@@ -80,7 +80,8 @@ struct background
 
   double Omega0_dcdmdr; /**< \f$ \Omega_{0 dcdm}+\Omega_{0 dr} \f$: decaying cold dark matter (dcdm) decaying to dark radiation (dr) */
 
-  double Gamma_dcdm; /**< \f$ \Gamma_{dcdm} \f$: decay constant for decaying cold dark matter */
+  double Gamma_dcdm; /**< \f$ \Gamma_{dcdm} \f$: decay constant for decaying cold dark matter to dark radiation*/
+  double Gamma_dcdm2bar; /**< \f$ \Gamma_{dcdm} \f$: decay constant for decaying cold dark matter to baryons */
 
   double Omega_ini_dcdm;    /**< \f$ \Omega_{ini,dcdm} \f$: rescaled initial value for dcdm density (see 1407.2418 for definitions) */
 
@@ -249,6 +250,7 @@ struct background
 
   int index_bi_a;       /**< {B} scale factor */
   int index_bi_rho_dcdm;/**< {B} dcdm density */
+  int index_bi_rho_daughter_bar;/**< {B} dcdm density */
   int index_bi_rho_dr;  /**< {B} dr density */
   int index_bi_rho_fld; /**< {B} fluid density */
   int index_bi_phi_scf;       /**< {B} scalar field value */
@@ -277,6 +279,7 @@ struct background
 
   short has_cdm;       /**< presence of cold dark matter? */
   short has_dcdm;      /**< presence of decaying cold dark matter? */
+  short has_dcdm2bar;      /**< presence of decaying cold dark matter? */
   short has_dr;        /**< presence of relativistic decay radiation? */
   short has_scf;       /**< presence of a scalar field? */
   short has_ncdm;      /**< presence of non-cold dark matter? */
